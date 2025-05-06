@@ -3,6 +3,9 @@ using PaymentGateway.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add logging
+builder.Logging.ClearProviders().AddConsole();
+
 // Add services to the container.
 
 builder.Services.AddControllers();

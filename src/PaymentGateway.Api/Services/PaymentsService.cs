@@ -5,33 +5,44 @@ using PaymentGateway.Api.Models.Requests.External;
 using PaymentGateway.Api.Repositories;
 
 namespace PaymentGateway.Api.Services;
-public class PaymentsService(IPaymentsRepository paymentsRepository, IBankSimulatorService bankSimulatorService) : IPaymentsService
+public class PaymentsService(IPaymentsRepository paymentsRepository,
+    IBankSimulatorService bankSimulatorService,
+    ILogger<PaymentsService> logger) : IPaymentsService
 {
-    public async Task<Payment> AddPayment(PostPaymentRequest paymentRequest)
+    public async Task<Payment?> AddPayment(PostPaymentRequest paymentRequest)
     {
-        var id = Guid.NewGuid();
+        var paymentId = Guid.NewGuid();
         var status = PaymentStatus.Declined;
 
-        var bankResponse = await bankSimulatorService.PostAuthorisePayment(
-            new PostAuthorisePaymentRequest(paymentRequest));
+        var bankRequest = new PostAuthorisePaymentRequest(paymentRequest);
+        var bankResponse = await bankSimulatorService.PostAuthorisePayment(bankRequest);
 
-        if (bankResponse?.Authorized == true)
+        if (bankResponse is not null)
         {
-            status = PaymentStatus.Authorized;
+            logger.LogInformation(
+                "Authorise payment with code: {AuthorizationCode} returned Authorized = {Authorized}",
+                bankResponse.AuthorizationCode, bankResponse.Authorized);
+
+            if (bankResponse.Authorized)
+            {
+                status = PaymentStatus.Authorized;
+            }
+        }
+        else
+        {
+            logger.LogWarning("No response receive from BankSimulator");
+            return null;
         }
 
-        var payment = new Payment
+        var payment = new Payment(paymentRequest)
         {
-            Id = id,
-            Status = status,
-            CardNumberLastFour = int.Parse(paymentRequest.CardNumber[^4..]),
-            ExpiryMonth = paymentRequest.ExpiryMonth,
-            ExpiryYear = paymentRequest.ExpiryYear,
-            Currency = paymentRequest.Currency,
-            Amount = paymentRequest.Amount
+            Id = paymentId,
+            Status = status
         };
 
         paymentsRepository.Add(payment);
+        logger.LogInformation("Payments added with Id: {Id}", payment.Id);
+
         return payment;
     }
 

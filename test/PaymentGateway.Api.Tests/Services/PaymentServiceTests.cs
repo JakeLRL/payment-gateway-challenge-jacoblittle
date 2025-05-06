@@ -1,4 +1,6 @@
-﻿using NSubstitute;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+
+using NSubstitute;
 
 using PaymentGateway.Api.Enums;
 using PaymentGateway.Api.Models.Database;
@@ -15,14 +17,16 @@ namespace PaymentGateway.Api.Tests.Services
     {
         private IPaymentsRepository _paymentsRepository;
         private IBankSimulatorService _bankSimulatorService;
-        private PaymentsService _paymentsService;
+        private PaymentsService _sut;
 
         [SetUp]
         public void SetUp()
         {
             _paymentsRepository = Substitute.For<IPaymentsRepository>();
             _bankSimulatorService = Substitute.For<IBankSimulatorService>();
-            _paymentsService = new PaymentsService(_paymentsRepository, _bankSimulatorService);
+            _sut = new PaymentsService(_paymentsRepository,
+                _bankSimulatorService,
+                NullLogger<PaymentsService>.Instance);
         }
 
         [Test]
@@ -42,7 +46,7 @@ namespace PaymentGateway.Api.Tests.Services
                 .Returns(new PostAuthorisePaymentResponse { Authorized = true });
 
             // Act
-            var result = await _paymentsService.AddPayment(request);
+            var result = await _sut.AddPayment(request);
 
             // Assert
             Assert.That(PaymentStatus.Authorized, Is.EqualTo(result.Status));
@@ -67,7 +71,7 @@ namespace PaymentGateway.Api.Tests.Services
                 .Returns(new PostAuthorisePaymentResponse { Authorized = false });
 
             // Act
-            var result = await _paymentsService.AddPayment(request);
+            var result = await _sut.AddPayment(request);
 
             // Assert
             Assert.That(PaymentStatus.Declined, Is.EqualTo(result.Status));
@@ -84,7 +88,7 @@ namespace PaymentGateway.Api.Tests.Services
             _paymentsRepository.Get(id).Returns(payment);
 
             // Act
-            var result = _paymentsService.GetPayment(id);
+            var result = _sut.GetPayment(id);
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -100,7 +104,7 @@ namespace PaymentGateway.Api.Tests.Services
             _paymentsRepository.Get(id).Returns((Payment)null);
 
             // Act
-            var result = _paymentsService.GetPayment(id);
+            var result = _sut.GetPayment(id);
 
             // Assert
             Assert.That(result, Is.Null);

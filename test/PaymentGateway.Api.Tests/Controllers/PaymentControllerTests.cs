@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using NSubstitute;
 
@@ -28,9 +29,11 @@ public class PaymentControllerTests
     {
         _paymentsRepository = new PaymentsRepository();
         _bankSimulatorService = Substitute.For<IBankSimulatorService>();
-        _paymentsService = new PaymentsService(_paymentsRepository, _bankSimulatorService);
+        _paymentsService = new PaymentsService(_paymentsRepository, 
+            _bankSimulatorService, 
+            NullLogger<PaymentsService>.Instance);
 
-        _sut = new PaymentsController(_paymentsService);
+        _sut = new PaymentsController(_paymentsService, NullLogger<PaymentsController>.Instance);
     }
 
     [Test]

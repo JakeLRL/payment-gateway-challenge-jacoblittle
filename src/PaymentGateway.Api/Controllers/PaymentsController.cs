@@ -12,10 +12,12 @@ namespace PaymentGateway.Api.Controllers;
 public class PaymentsController : Controller
 {
     private readonly IPaymentsService _paymentsService;
+    private readonly ILogger _logger;
 
-    public PaymentsController(IPaymentsService paymentsService)
+    public PaymentsController(IPaymentsService paymentsService, ILogger<PaymentsController> logger)
     {
         _paymentsService = paymentsService;
+        _logger = logger;
     }
 
     [HttpGet("{id:guid}")]
@@ -23,8 +25,11 @@ public class PaymentsController : Controller
     {
         var payment = _paymentsService.GetPayment(id);
 
+        _logger.LogInformation("GetPaymentAsync requested with id: {id}", id);
+
         if (payment == null)
         {
+            _logger.LogInformation("No Payment found with id: {id}", id);
             return NotFound();
         }
 
@@ -46,7 +51,7 @@ public class PaymentsController : Controller
 
         if (payment == null)
         {
-            return NotFound();
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "BankSimulator is offline");
         }
 
         return new OkObjectResult(payment);
