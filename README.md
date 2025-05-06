@@ -39,6 +39,7 @@ PaymentGateway.sln
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 - IDE like [Visual Studio 2022 version 17.8 or higher.](https://visualstudio.microsoft.com/)
+- [Docker](https://www.docker.com/)
 
 ### Clone and Build
 
@@ -65,6 +66,13 @@ dotnet run --project src/PaymentGateway.Api
 Or
 
 Run directly through Visual Studio with "PaymentGateway.Api" as the startup project
+
+Then
+
+Start the Simulator using the command
+```
+docker-compose up
+```
 
 ## 🧪 Testing
 
